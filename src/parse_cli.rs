@@ -1,5 +1,5 @@
 use camino::Utf8PathBuf;
-use clap::{ArgAction, ArgGroup, Parser};
+use clap::{ArgGroup, Parser};
 
 #[derive(Clone, Debug, Parser)]
 #[clap(
@@ -29,6 +29,6 @@ pub struct Cli {
     #[clap(short = 'S', long)]
     pub assembly: bool,
 
-    /// The C file to compile. Leave empty to accept stdin.
-    pub input_file: Option<Utf8PathBuf>,
+    /// The C file to compile.
+    pub input_file: Utf8PathBuf,
 }
