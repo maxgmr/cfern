@@ -13,20 +13,17 @@
 use clap::Parser;
 use color_eyre::eyre;
 
-mod assemble_and_link;
-mod compile;
-mod parse_cli;
-mod preprocess;
-
-use parse_cli::Cli;
+use cfern::{
+    assemble_and_link::assemble_and_link, compile::compile, parse_cli::Cli, preprocess::preprocess,
+};
 
 fn main() -> eyre::Result<()> {
     color_eyre::install()?;
     let cli = Cli::parse();
 
-    let preprocessed_file = preprocess::preprocess(&cli.input_file)?;
-    let assembly_file = compile::compile(&preprocessed_file)?;
-    assemble_and_link::assemble_and_link(&assembly_file)?;
+    let preprocessed_file = preprocess(&cli.input_file)?;
+    let assembly_file = compile(&preprocessed_file)?;
+    assemble_and_link(&assembly_file)?;
 
     Ok(())
 }
