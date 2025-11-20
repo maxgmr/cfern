@@ -1,4 +1,5 @@
 use std::{
+    fs,
     io::{self, Write},
     process::Command,
 };
@@ -25,9 +26,7 @@ pub fn assemble_and_link(path: &Utf8Path) -> color_eyre::Result<()> {
     io::stdout().write_all(&output.stdout)?;
     io::stderr().write_all(&output.stderr)?;
 
-    let output = Command::new("rm").arg(path).output()?;
-    io::stdout().write_all(&output.stdout)?;
-    io::stderr().write_all(&output.stderr)?;
+    fs::remove_file(path)?;
 
     Ok(())
 }

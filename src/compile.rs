@@ -1,8 +1,4 @@
-use std::{
-    fs,
-    io::{self, Write},
-    process::Command,
-};
+use std::fs;
 
 use camino::{Utf8Path, Utf8PathBuf};
 use color_eyre::eyre::eyre;
@@ -25,9 +21,8 @@ pub fn compile(preprocessed_path: &Utf8Path) -> color_eyre::Result<Utf8PathBuf> 
     // TODO
     fs::write(&output_path, ASM_STUB)?;
 
-    let output = Command::new("rm").arg(preprocessed_path).output()?;
-    io::stdout().write_all(&output.stdout)?;
-    io::stderr().write_all(&output.stderr)?;
+    // Clean up preprocessed file
+    fs::remove_file(preprocessed_path)?;
 
     Ok(output_path)
 }
