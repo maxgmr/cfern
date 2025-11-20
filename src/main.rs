@@ -13,6 +13,7 @@
 use clap::Parser;
 use color_eyre::eyre;
 
+mod compile;
 mod parse_cli;
 mod preprocess;
 
@@ -23,6 +24,7 @@ fn main() -> eyre::Result<()> {
     let cli = Cli::parse();
 
     let preprocessed_file = preprocess::preprocess(&cli.input_file)?;
+    let assembly_file = compile::compile(&preprocessed_file)?;
 
     Ok(())
 }
