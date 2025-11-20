@@ -1,6 +1,7 @@
 use std::process::Command;
 
 use camino::{Utf8Path, Utf8PathBuf};
+use color_eyre::eyre::eyre;
 
 const PREPROCESSED_EXTENSION: &str = ".i";
 
@@ -9,7 +10,9 @@ const PREPROCESSED_EXTENSION: &str = ".i";
 /// If successful, returns the path to the preprocessed file as a [`Utf8PathBuf`].
 pub fn preprocess(path: &Utf8Path) -> color_eyre::Result<Utf8PathBuf> {
     let mut output_path = path.to_owned();
-    output_path.set_extension(PREPROCESSED_EXTENSION);
+    if !output_path.set_extension(PREPROCESSED_EXTENSION) {
+        return Err(eyre!("no input file name given"));
+    }
     Command::new("gcc")
         .arg("-E")
         .arg("-P")
