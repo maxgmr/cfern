@@ -18,6 +18,10 @@ pub fn assemble_and_link(path: &Utf8Path) -> color_eyre::Result<()> {
         .arg("-o")
         .arg(&output_path)
         .output()?;
+    if !output.status.success() {
+        let msg = String::from_utf8_lossy(&output.stderr).into_owned();
+        return Err(eyre!(msg));
+    }
     io::stdout().write_all(&output.stdout)?;
     io::stderr().write_all(&output.stderr)?;
 
