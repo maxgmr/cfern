@@ -1,4 +1,7 @@
-use std::process::Command;
+use std::{
+    io::{self, Write},
+    process::Command,
+};
 
 use camino::{Utf8Path, Utf8PathBuf};
 use color_eyre::eyre::eyre;
@@ -13,9 +16,13 @@ pub fn compile(preprocessed_path: &Utf8Path) -> color_eyre::Result<Utf8PathBuf> 
     }
 
     // TODO
-    Command::new("touch").arg(&output_path).output()?;
+    let output = Command::new("touch").arg(&output_path).output()?;
+    io::stdout().write_all(&output.stdout)?;
+    io::stderr().write_all(&output.stderr)?;
 
-    Command::new("rm").arg(preprocessed_path).output()?;
+    let output = Command::new("rm").arg(preprocessed_path).output()?;
+    io::stdout().write_all(&output.stdout)?;
+    io::stderr().write_all(&output.stderr)?;
 
     Ok(output_path)
 }

@@ -1,4 +1,7 @@
-use std::process::Command;
+use std::{
+    io::{self, Write},
+    process::Command,
+};
 
 use camino::{Utf8Path, Utf8PathBuf};
 use color_eyre::eyre::eyre;
@@ -13,12 +16,16 @@ pub fn preprocess(path: &Utf8Path) -> color_eyre::Result<Utf8PathBuf> {
     if !output_path.set_extension(PREPROCESSED_EXTENSION) {
         return Err(eyre!("no input file name given"));
     }
-    Command::new("gcc")
+
+    let output = Command::new("gcc")
         .arg("-E")
         .arg("-P")
         .arg(path)
         .arg("-o")
         .arg(&output_path)
         .output()?;
+    io::stdout().write_all(&output.stdout)?;
+    io::stderr().write_all(&output.stderr)?;
+
     Ok(output_path)
 }

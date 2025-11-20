@@ -1,4 +1,7 @@
-use std::process::Command;
+use std::{
+    io::{self, Write},
+    process::Command,
+};
 
 use camino::Utf8Path;
 use color_eyre::eyre::eyre;
@@ -9,11 +12,18 @@ pub fn assemble_and_link(path: &Utf8Path) -> color_eyre::Result<()> {
     if !output_path.set_extension("") {
         return Err(eyre!("no input file name given"));
     }
-    Command::new("gcc")
+
+    let output = Command::new("gcc")
         .arg(path)
         .arg("-o")
         .arg(&output_path)
         .output()?;
-    Command::new("rm").arg(path).output()?;
+    io::stdout().write_all(&output.stdout)?;
+    io::stderr().write_all(&output.stderr)?;
+
+    let output = Command::new("rm").arg(path).output()?;
+    io::stdout().write_all(&output.stdout)?;
+    io::stderr().write_all(&output.stderr)?;
+
     Ok(())
 }
