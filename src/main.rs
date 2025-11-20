@@ -10,12 +10,11 @@
     clippy::todo
 )]
 
-use std::fs;
-
 use clap::Parser;
 use color_eyre::eyre;
 
 mod parse_cli;
+mod preprocess;
 
 use parse_cli::Cli;
 
@@ -23,7 +22,7 @@ fn main() -> eyre::Result<()> {
     color_eyre::install()?;
     let cli = Cli::parse();
 
-    let input_file = fs::read_to_string(cli.input_file)?;
+    let preprocessed_file = preprocess::preprocess(&cli.input_file)?;
 
     Ok(())
 }
