@@ -8,10 +8,10 @@ use color_eyre::eyre::eyre;
 
 /// Currently just a wrapper around `gcc ASSEMBLY_FILE -o OUTPUT_FILE`.
 pub fn assemble_and_link(path: &Utf8Path) -> color_eyre::Result<()> {
-    let mut output_path = path.to_owned();
-    if !output_path.set_extension("") {
+    let Some(stem) = path.file_stem() else {
         return Err(eyre!("no input file name given"));
-    }
+    };
+    let output_path = path.with_file_name(stem);
 
     let output = Command::new("gcc")
         .arg(path)

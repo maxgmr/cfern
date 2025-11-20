@@ -6,7 +6,7 @@ use std::{
 use camino::{Utf8Path, Utf8PathBuf};
 use color_eyre::eyre::eyre;
 
-const PREPROCESSED_EXTENSION: &str = ".i";
+const PREPROCESSED_EXTENSION: &str = "i";
 
 /// Currently just a wrapper around `gcc -E -P INPUT_FILE -o PREPROCESSED_FILE`.
 ///

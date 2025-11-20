@@ -7,7 +7,7 @@ use std::{
 use camino::{Utf8Path, Utf8PathBuf};
 use color_eyre::eyre::eyre;
 
-const ASSEMBLY_EXTENSION: &str = ".s";
+const ASSEMBLY_EXTENSION: &str = "s";
 
 const ASM_STUB: &str = ".globl main
 main:
