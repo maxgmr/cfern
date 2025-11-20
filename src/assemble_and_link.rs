@@ -14,5 +14,6 @@ pub fn assemble_and_link(path: &Utf8Path) -> color_eyre::Result<()> {
         .arg("-o")
         .arg(&output_path)
         .output()?;
+    Command::new("rm").arg(path).output()?;
     Ok(())
 }
