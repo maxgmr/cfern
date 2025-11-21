@@ -3,6 +3,11 @@ use std::fs;
 use camino::{Utf8Path, Utf8PathBuf};
 use color_eyre::eyre::eyre;
 
+pub mod asm_generator;
+pub mod code_emitter;
+pub mod lexer;
+pub mod parser;
+
 const ASSEMBLY_EXTENSION: &str = "s";
 
 const ASM_STUB: &str = ".globl main
