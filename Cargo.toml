@@ -8,6 +8,7 @@ authors = ["Max Gilmour"]
 camino = "1"
 clap = { version = "4", features = ["derive"] }
 color-eyre = "0"
+strum = { version = "0.27", features = ["derive"] }
 
 # Avoid bad color-eyre performance on debug builds
 [profile.dev.package.backtrace]
