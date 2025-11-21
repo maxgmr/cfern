@@ -14,7 +14,7 @@ use clap::Parser;
 use color_eyre::eyre;
 
 use cfern::{
-    assemble_and_link::assemble_and_link, compile::compile, parse_cli::Cli, preprocess::preprocess,
+    assemble_and_link::assemble_and_link, compiler::compile, parse_cli::Cli, preprocess::preprocess,
 };
 
 fn main() -> eyre::Result<()> {
