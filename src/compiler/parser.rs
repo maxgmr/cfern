@@ -5,6 +5,6 @@ use crate::compiler::token::Token;
 pub struct AbstractSyntaxTree;
 
 /// Convert an array of [`Token`]s to an [`AbstractSyntaxTree`].
-pub fn parse(tokens: &[Token]) -> color_eyre::Result<AbstractSyntaxTree> {
+pub fn parse(_tokens: &[Token]) -> color_eyre::Result<AbstractSyntaxTree> {
     todo!()
 }

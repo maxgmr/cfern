@@ -13,13 +13,12 @@
 use std::fs;
 
 use clap::Parser;
-use color_eyre::eyre;
 
 use cfern::{
     assemble_and_link::assemble_and_link, compiler, parse_cli::Cli, preprocess::preprocess,
 };
 
-fn main() -> eyre::Result<()> {
+fn main() -> color_eyre::Result<()> {
     color_eyre::install()?;
     let cli = Cli::parse();
 
@@ -28,13 +27,24 @@ fn main() -> eyre::Result<()> {
     let input_file = fs::read_to_string(&preprocessed_file)?;
 
     let tokens = compiler::lex(&input_file)?;
+    // Return early if lex-only option enabled
+    if cli.lex {
+        return Ok(());
+    }
 
     let ast = compiler::parse(&tokens)?;
+    // Return early if parse-only option enabled
+    if cli.parse {
+        return Ok(());
+    }
 
     let asm = compiler::generate_asm(&ast)?;
+    // Return early if codegen-only option enabled
+    if cli.codegen {
+        return Ok(());
+    }
 
     let assembly_file = compiler::emit_code(&asm)?;
-
     // Return early if assembly-only option enabled
     if cli.assembly {
         return Ok(());
