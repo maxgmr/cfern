@@ -33,12 +33,14 @@ fn main() -> eyre::Result<()> {
 
     let asm = compiler::generate_asm(&ast)?;
 
+    let assembly_file = compiler::emit_code(&asm)?;
+
     // Return early if assembly-only option enabled
     if cli.assembly {
         return Ok(());
     }
 
-    // assemble_and_link(&assembly_file)?;
+    assemble_and_link(&assembly_file)?;
 
     Ok(())
 }

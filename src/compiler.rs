@@ -10,6 +10,7 @@ pub mod parser;
 pub mod token;
 
 pub use asm_generator::generate_asm;
+pub use code_emitter::emit_code;
 pub use lexer::lex;
 pub use parser::parse;
 
