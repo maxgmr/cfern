@@ -7,6 +7,7 @@ pub mod asm_generator;
 pub mod code_emitter;
 pub mod lexer;
 pub mod parser;
+pub mod token;
 
 const ASSEMBLY_EXTENSION: &str = "s";
 
