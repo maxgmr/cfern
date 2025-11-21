@@ -23,6 +23,12 @@ fn main() -> eyre::Result<()> {
 
     let preprocessed_file = preprocess(&cli.input_file)?;
     let assembly_file = compile(&preprocessed_file)?;
+
+    // Return early if assemly-only option enabled
+    if cli.assembly {
+        return Ok(());
+    }
+
     assemble_and_link(&assembly_file)?;
 
     Ok(())
