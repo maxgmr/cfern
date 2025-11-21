@@ -31,7 +31,9 @@ fn main() -> eyre::Result<()> {
 
     let ast = compiler::parse(&tokens)?;
 
-    // Return early if assemly-only option enabled
+    let asm = compiler::generate_asm(&ast)?;
+
+    // Return early if assembly-only option enabled
     if cli.assembly {
         return Ok(());
     }
