@@ -10,11 +10,13 @@
     clippy::todo
 )]
 
+use std::fs;
+
 use clap::Parser;
 use color_eyre::eyre;
 
 use cfern::{
-    assemble_and_link::assemble_and_link, compiler::compile, parse_cli::Cli, preprocess::preprocess,
+    assemble_and_link::assemble_and_link, compiler, parse_cli::Cli, preprocess::preprocess,
 };
 
 fn main() -> eyre::Result<()> {
@@ -22,14 +24,17 @@ fn main() -> eyre::Result<()> {
     let cli = Cli::parse();
 
     let preprocessed_file = preprocess(&cli.input_file)?;
-    let assembly_file = compile(&preprocessed_file)?;
+
+    let input_file = fs::read_to_string(&preprocessed_file)?;
+
+    let tokens = compiler::lex(&input_file)?;
 
     // Return early if assemly-only option enabled
     if cli.assembly {
         return Ok(());
     }
 
-    assemble_and_link(&assembly_file)?;
+    // assemble_and_link(&assembly_file)?;
 
     Ok(())
 }

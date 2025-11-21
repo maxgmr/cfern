@@ -9,6 +9,8 @@ pub mod lexer;
 pub mod parser;
 pub mod token;
 
+pub use lexer::lex;
+
 const ASSEMBLY_EXTENSION: &str = "s";
 
 const ASM_STUB: &str = ".globl main
