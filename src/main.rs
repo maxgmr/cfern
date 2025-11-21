@@ -29,6 +29,8 @@ fn main() -> eyre::Result<()> {
 
     let tokens = compiler::lex(&input_file)?;
 
+    let ast = compiler::parse(&tokens)?;
+
     // Return early if assemly-only option enabled
     if cli.assembly {
         return Ok(());

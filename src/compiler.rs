@@ -10,6 +10,7 @@ pub mod parser;
 pub mod token;
 
 pub use lexer::lex;
+pub use parser::parse;
 
 const ASSEMBLY_EXTENSION: &str = "s";
 
