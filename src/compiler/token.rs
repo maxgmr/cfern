@@ -9,7 +9,7 @@ const CONSTANT_REGEX: &str = r"^([0-9]+)(?-u:\b)";
 
 /// Returns the longest [`Token`] in the given `str`, along with the length of the matched
 /// sequence (if any).
-fn get_next_token<'a>(data: &'a str) -> Option<(Token<'a>, usize)> {
+pub fn get_next_token<'a>(data: &'a str) -> Option<(Token<'a>, usize)> {
     #[derive(Debug)]
     struct TokenMatch<'a> {
         token: Option<Token<'a>>,
