@@ -66,7 +66,9 @@ fn count_comment(data: &str) -> usize {
             continue;
         }
 
-        return count_to(data, end).unwrap_or_default();
+        return count_to(data, end)
+            .map(|count| count + end.len())
+            .unwrap_or_default();
     }
 
     0
@@ -107,6 +109,58 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn count_whitespace_simple() {
+        assert_eq!(count_whitespace("   \n\r\t\t"), 7);
+    }
+
+    #[test]
+    fn count_whitespace_none() {
+        assert_eq!(count_whitespace("1  "), 0);
+    }
+
+    #[test]
+    fn count_whitespace_non_ascii() {
+        // U+205F: medium mathematical space
+        assert_eq!(count_whitespace("\t\u{205F} "), 5);
+    }
+
+    #[test]
+    fn count_comment_oneline() {
+        let data = "// This is a comment\n//thisisanother\n#include <stdio.h>\n";
+        assert_eq!(count_comment(data), 21);
+    }
+
+    #[test]
+    fn count_comment_online_no_newline() {
+        let data = "// This is a comment with no newline";
+        assert_eq!(count_comment(data), 0);
+    }
+
+    #[test]
+    fn count_comment_multiline() {
+        let data = "/* \n * This is a multiline\n * comment\n */\n#include <stdio.h>\n";
+        assert_eq!(count_comment(data), 41);
+    }
+
+    #[test]
+    fn count_comment_multiline_nested() {
+        let data = "/* \n * Nested\n * /* \n *  * comment\n *  */\n */";
+        assert_eq!(count_comment(data), 41);
+    }
+
+    #[test]
+    fn count_comment_multiline_no_end() {
+        let data = "/* \n * not a comment\n * \n";
+        assert_eq!(count_comment(data), 0);
+    }
+
+    #[test]
+    fn count_comment_none() {
+        let data = "int hello = 1; // this is the start of the comment";
+        assert_eq!(count_comment(data), 0);
+    }
 
     #[test]
     fn count_applicable_simple() {
