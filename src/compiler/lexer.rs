@@ -8,6 +8,8 @@ use color_eyre::{
     owo_colors::OwoColorize,
 };
 
+const COMMENT_PAIRS: [(&str, &str); 2] = [("//", "\n"), ("/*", "*/")];
+
 /// Lex a string of valid C code into a list of [`Token`]s.
 pub fn lex(_data: &str) -> color_eyre::Result<Vec<Token>> {
     todo!()
@@ -51,5 +53,131 @@ impl<'a> Lexer<'a> {
                     "^ Here".bright_red().bold()
                 )
             })
+    }
+}
+
+fn count_whitespace(data: &str) -> usize {
+    count_applicable(data, |c| c.is_whitespace())
+}
+
+fn count_comment(data: &str) -> usize {
+    for &(start, end) in &COMMENT_PAIRS {
+        if !data.starts_with(start) {
+            continue;
+        }
+
+        return count_to(data, end).unwrap_or_default();
+    }
+
+    0
+}
+
+/// Counts the number of bytes up to the given pattern. Returns [`None`] if no match.
+fn count_to(mut data: &str, pattern: &str) -> Option<usize> {
+    let mut index = 0;
+    while !data.is_empty() {
+        if data.starts_with(pattern) {
+            return Some(index);
+        }
+        let next_char_size = data.chars().next().unwrap().len_utf8();
+        index += next_char_size;
+        data = &data[next_char_size..];
+    }
+
+    None
+}
+
+// Counts bytes in the given string until a char that doesn't meet the given predicate is found.
+fn count_applicable<F>(data: &str, mut predicate: F) -> usize
+where
+    F: FnMut(char) -> bool,
+{
+    let mut index = 0;
+
+    for c in data.chars() {
+        if !predicate(c) {
+            break;
+        }
+        index += c.len_utf8();
+    }
+
+    index
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn count_applicable_simple() {
+        assert_eq!(count_applicable("hello there", |c| c.is_alphabetic()), 5);
+    }
+
+    #[test]
+    fn count_applicable_case() {
+        assert_eq!(
+            count_applicable("four score and Seven years ago", |c| !c
+                .is_ascii_uppercase()),
+            15
+        );
+    }
+
+    #[test]
+    fn count_applicable_multibyte() {
+        assert_eq!(count_applicable("我是Max", |c| !c.is_ascii()), 6);
+    }
+
+    #[test]
+    fn count_applicable_end() {
+        let data = "Hullo! Nice to meet you";
+        assert_eq!(count_applicable(data, |c| c.is_ascii()), data.len());
+    }
+
+    #[test]
+    fn count_applicable_empty() {
+        assert_eq!(count_applicable("", |_| true), 0);
+    }
+
+    #[test]
+    fn count_to_simple() {
+        assert_eq!(count_to("hello there\nnice to meet you!", "to"), Some(17));
+    }
+
+    #[test]
+    fn count_to_start() {
+        assert_eq!(count_to("match immediately", "match"), Some(0));
+    }
+
+    #[test]
+    fn count_to_multibyte_chars() {
+        assert_eq!(
+            count_to("你好\n我是马克斯\nhello\nI'm Max", "hello"),
+            Some(23)
+        );
+    }
+
+    #[test]
+    fn count_to_multiple_matches() {
+        assert_eq!(count_to("i am sam i am", "am"), Some(2));
+    }
+
+    #[test]
+    fn count_to_no_match() {
+        assert_eq!(count_to("om nom nom", "am"), None);
+    }
+
+    #[test]
+    fn count_to_empty_data() {
+        assert_eq!(count_to("", "blah"), None);
+    }
+
+    #[test]
+    fn count_to_empty_pattern() {
+        assert_eq!(count_to("this is a test", ""), Some(0));
+    }
+
+    #[test]
+    fn count_to_both_empty() {
+        assert_eq!(count_to("", ""), None);
     }
 }
