@@ -316,4 +316,9 @@ mod tests {
     fn next_token_actually_ident() {
         assert_eq!(get_next_token("inti"), Some((Token::Identifier("inti"), 4)))
     }
+
+    #[test]
+    fn next_token_no_number_start() {
+        assert_eq!(get_next_token("123bar"), None)
+    }
 }
