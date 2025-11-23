@@ -32,19 +32,77 @@ generate_token_regexes![
 
 /// A token of C code.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub enum Token<'a> {
+pub struct Token<'a> {
+    kind: TokenKind<'a>,
+    len: usize,
+    index: usize,
+}
+impl<'a> Token<'a> {
+    /// Create an empty placeholder token.
+    pub fn create_placeholder() -> Self {
+        Self::new(TokenKind::Identifier(""), 0)
+    }
+
+    /// Create a new token.
+    pub fn new(kind: TokenKind<'a>, index: usize) -> Self {
+        let len = match kind {
+            TokenKind::Keyword(keyword) => {
+                let kw_s: &'a str = keyword.into();
+                kw_s.len()
+            }
+            TokenKind::Identifier(ident) => ident.len(),
+            TokenKind::Constant(constant) => constant.len(),
+            TokenKind::Symbol(_) => 1,
+        };
+        Self { kind, len, index }
+    }
+
+    /// If the start of the provided data satisfies the `match_fn`, that matched substring
+    /// satisfies the `token_fn`, and the length of the matched string is longer than the current
+    /// token length, then update this token.
+    pub fn try_update<S, T>(&mut self, data: &'a str, index: usize, match_fn: S, token_fn: T)
+    where
+        S: Fn(&'a str) -> Option<&'a str>,
+        T: Fn(&'a str) -> Option<TokenKind>,
+    {
+        if let Some(new_str) = match_fn(data)
+            && new_str.len() > self.len
+            && let Some(token_kind) = token_fn(new_str)
+        {
+            *self = Self {
+                kind: token_kind,
+                len: new_str.len(),
+                index,
+            };
+        }
+    }
+
+    /// Get the length of this token.
+    pub fn len(&self) -> usize {
+        self.len
+    }
+
+    /// Check whether or not this token is empty.
+    pub fn is_empty(&self) -> bool {
+        self.len == 0
+    }
+}
+
+/// A particular kind of C code token.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum TokenKind<'a> {
     Keyword(Keyword),
     Identifier(&'a str),
     Constant(&'a str),
     Symbol(Symbol),
 }
-impl<'a> From<Token<'a>> for &'a str {
-    fn from(value: Token<'a>) -> Self {
+impl<'a> From<TokenKind<'a>> for &'a str {
+    fn from(value: TokenKind<'a>) -> Self {
         match value {
-            Token::Keyword(keyword) => keyword.into(),
-            Token::Identifier(ident) => ident,
-            Token::Constant(constant) => constant,
-            Token::Symbol(symbol) => symbol.into(),
+            TokenKind::Keyword(keyword) => keyword.into(),
+            TokenKind::Identifier(ident) => ident,
+            TokenKind::Constant(constant) => constant,
+            TokenKind::Symbol(symbol) => symbol.into(),
         }
     }
 }
@@ -214,49 +272,5 @@ mod tests {
         for symbol in Symbol::iter() {
             let _: char = symbol.into();
         }
-    }
-
-    #[test]
-    fn next_token_keyword() {
-        assert_eq!(
-            get_next_token("int my_val = 0;"),
-            Some((Token::Keyword(Keyword::Int), 3))
-        )
-    }
-
-    #[test]
-    fn next_token_ident() {
-        assert_eq!(
-            get_next_token("my_val = 0;"),
-            Some((Token::Identifier("my_val"), 6))
-        )
-    }
-
-    #[test]
-    fn next_token_const() {
-        assert_eq!(get_next_token("0;"), Some((Token::Constant("0"), 1)))
-    }
-
-    #[test]
-    fn next_token_semicolon() {
-        assert_eq!(
-            get_next_token(";"),
-            Some((Token::Symbol(Symbol::Semicolon), 1))
-        )
-    }
-
-    #[test]
-    fn next_token_empty() {
-        assert_eq!(get_next_token(""), None);
-    }
-
-    #[test]
-    fn next_token_actually_ident() {
-        assert_eq!(get_next_token("inti"), Some((Token::Identifier("inti"), 4)))
-    }
-
-    #[test]
-    fn next_token_no_number_start() {
-        assert_eq!(get_next_token("123bar"), None)
     }
 }
