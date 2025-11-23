@@ -33,7 +33,7 @@ generate_token_regexes![
 /// A token of C code.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Token<'a> {
-    kind: TokenKind<'a>,
+    pub kind: TokenKind<'a>,
     len: usize,
     index: usize,
 }

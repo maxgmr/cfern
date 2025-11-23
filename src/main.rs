@@ -33,6 +33,7 @@ fn main() -> color_eyre::Result<()> {
     }
 
     let ast = compiler::parse(&tokens)?;
+    println!("{ast:#?}");
     // Return early if parse-only option enabled
     if cli.parse {
         return Ok(());
