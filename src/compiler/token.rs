@@ -77,6 +77,11 @@ impl<'a> Token<'a> {
         }
     }
 
+    /// Get the [`TokenKind`] of this token.
+    pub fn kind(&self) -> &TokenKind<'_> {
+        &self.kind
+    }
+
     /// Get the length of this token.
     pub fn len(&self) -> usize {
         self.len
