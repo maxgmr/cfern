@@ -123,6 +123,11 @@ pub enum Symbol {
 }
 impl From<Symbol> for &'static str {
     fn from(value: Symbol) -> Self {
+        (&value).into()
+    }
+}
+impl From<&Symbol> for &'static str {
+    fn from(value: &Symbol) -> Self {
         match value {
             Symbol::OpenParenthesis => "(",
             Symbol::CloseParenthesis => ")",
