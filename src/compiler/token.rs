@@ -82,6 +82,11 @@ impl<'a> Token<'a> {
         &self.kind
     }
 
+    /// Get the index of this token.
+    pub fn index(&self) -> usize {
+        self.index
+    }
+
     /// Get the length of this token.
     pub fn len(&self) -> usize {
         self.len
