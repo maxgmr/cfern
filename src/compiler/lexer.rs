@@ -1,20 +1,13 @@
-use std::fmt::Display;
-
 use crate::compiler::token::{
     Keyword, Symbol, Token, TokenKind, match_constant, match_identifier, match_keyword,
 };
 
-use color_eyre::{
-    Section, SectionExt,
-    eyre::{OptionExt, eyre},
-    owo_colors::OwoColorize,
-};
 use strum::IntoEnumIterator;
 
 const COMMENT_PAIRS: [(&str, &str); 2] = [("//", "\n"), ("/*", "*/")];
 
 /// Lex a string of valid C code into a list of [`Token`]s.
-pub fn lex<'a>(data: &'a str) -> color_eyre::Result<Vec<Token<'a>>> {
+pub fn lex<'a>(data: &'a str) -> Result<Vec<Token<'a>>, LexingError> {
     let mut tokens = Vec::new();
     let mut index = 0;
 
@@ -25,12 +18,27 @@ pub fn lex<'a>(data: &'a str) -> color_eyre::Result<Vec<Token<'a>>> {
     Ok(tokens)
 }
 
+/// An error which can occur during lexing.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum LexingError {
+    /// Sequence doesn't match a valid [`Token`]
+    NoValidToken { index: usize },
+}
+impl std::fmt::Display for LexingError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            LexingError::NoValidToken { index } => write!(f, "no valid token at index {index}"),
+        }
+    }
+}
+impl std::error::Error for LexingError {}
+
 /// Return the next token, moving the index accordingly. Returns [`None`] if done lexing.
 /// Returns an error if unable to match token.
 fn consume_next_token<'a>(
     data: &'a str,
     index: &mut usize,
-) -> color_eyre::Result<Option<Token<'a>>> {
+) -> Result<Option<Token<'a>>, LexingError> {
     let mut remaining = get_remaining(data, *index);
 
     consume_whitespace_comments(&mut remaining, index);
@@ -71,7 +79,7 @@ fn consume_next_token<'a>(
     }
 
     // Unable to match with Token
-    lexing_error(data, *index, "invalid sequence")
+    Err(LexingError::NoValidToken { index: *index })
 }
 
 fn consume_whitespace_comments(remaining: &mut &str, index: &mut usize) {
@@ -90,36 +98,6 @@ fn consume_whitespace_comments(remaining: &mut &str, index: &mut usize) {
 fn consume(remaining: &mut &str, index: &mut usize, num_bytes: usize) {
     *remaining = &remaining[num_bytes..];
     *index += num_bytes;
-}
-
-/// Return an error showing where in the file the error occurred.
-fn lexing_error<S: AsRef<str> + Display>(
-    data: &str,
-    index: usize,
-    message: S,
-) -> color_eyre::Result<Option<Token<'_>>> {
-    let consumed = get_consumed(data, index);
-    let remaining = get_remaining(data, index);
-    let consumed_lines: Vec<&str> = consumed.split("\n").collect();
-    let line_num = consumed_lines.len();
-    let consumed_line = consumed_lines.last().ok_or_eyre("no consumed lines")?;
-    let col_num = consumed_line.len() + 1;
-    let remaining_line: &str = remaining.split("\n").next().unwrap_or("");
-    Err(eyre!("{}", message))
-        .with_section(|| format!("{}:{}", line_num.blue(), col_num.blue()).header("Line info:"))
-        .with_section(|| {
-            format!(
-                "{}{}\n{}{}",
-                consumed_line,
-                remaining_line,
-                (0..(col_num - 1)).map(|_| " ").collect::<String>(),
-                "^ Here".bright_red().bold()
-            )
-        })
-}
-
-fn get_consumed(data: &str, index: usize) -> &str {
-    &data[..index]
 }
 
 fn get_remaining(data: &str, index: usize) -> &str {
@@ -285,8 +263,11 @@ int main(void) {
 
     #[test]
     fn next_token_no_number_start() {
-        let mut index = 0;
-        let _ = consume_next_token("123bar", &mut index).unwrap_err();
+        let mut index = 3;
+        assert_eq!(
+            consume_next_token("int 123bar = 0;", &mut index).unwrap_err(),
+            LexingError::NoValidToken { index: 4 }
+        );
     }
 
     #[test]
