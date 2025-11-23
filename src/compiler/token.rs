@@ -7,68 +7,6 @@ const KEYWORD_REGEX: &str = r"^([a-zA-Z]+)(?-u:\b)";
 const IDENTIFIER_REGEX: &str = r"^([a-zA-Z_][0-9A-Za-z_]*)(?-u:\b)";
 const CONSTANT_REGEX: &str = r"^([0-9]+)(?-u:\b)";
 
-/// Returns the longest [`Token`] in the given `str`, along with the length of the matched
-/// sequence (if any).
-pub fn get_next_token<'a>(data: &'a str) -> Option<(Token<'a>, usize)> {
-    #[derive(Debug)]
-    struct TokenMatch<'a> {
-        token: Option<Token<'a>>,
-        len: usize,
-    }
-    impl<'a> TokenMatch<'a> {
-        fn new() -> Self {
-            Self {
-                token: None,
-                len: 0,
-            }
-        }
-
-        fn try_update<S, T>(&mut self, data: &'a str, match_fn: S, token_fn: T)
-        where
-            S: Fn(&'a str) -> Option<&'a str>,
-            T: Fn(&'a str) -> Option<Token>,
-        {
-            if let Some(new_str) = match_fn(data)
-                && new_str.len() > self.len
-                && let Some(token) = token_fn(new_str)
-            {
-                self.token = Some(token);
-                self.len = new_str.len();
-            }
-        }
-    }
-
-    if data.is_empty() {
-        return None;
-    }
-
-    let mut current_match = TokenMatch::new();
-
-    // Try to match keyword
-    current_match.try_update(data, match_keyword, |s| {
-        Keyword::try_from(s).ok().map(Token::Keyword)
-    });
-    // Try to match ident
-    current_match.try_update(data, match_identifier, |s| Some(Token::Identifier(s)));
-    // Try to match constant
-    current_match.try_update(data, match_constant, |s| Some(Token::Constant(s)));
-    // If a match has been found, return it
-    if let Some(token) = current_match.token {
-        return Some((token, current_match.len));
-    }
-
-    // Try to match symbols
-    for symbol in Symbol::iter() {
-        let symbol_str: &'static str = symbol.into();
-        if &data[..1] == symbol_str {
-            return Some((Token::Symbol(symbol), 1));
-        }
-    }
-
-    // Unable to match with Token
-    None
-}
-
 /// Generates regex helper functions which statically create regexes for each [`Token`] variant.
 macro_rules! generate_token_regexes {
     [
