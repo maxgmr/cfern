@@ -1,9 +1,9 @@
 use crate::compiler::token::{Keyword, Symbol, Token, TokenKind};
 
 /// Converts an array of [`Token`]s into an abstract syntax tree in the form of a [`Program`].
-pub fn parse<'a>(tokens: &'a [Token]) -> color_eyre::Result<Program<'a>> {
+pub fn parse<'a>(tokens: &'a [Token]) -> Result<Program<'a>, ParseError> {
     let mut index = 0;
-    Ok(parse_program(tokens, &mut index)?)
+    parse_program(tokens, &mut index)
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -28,10 +28,84 @@ pub enum Expression<'a> {
 }
 
 #[derive(Debug)]
-struct ParseError;
+pub enum ParseError {
+    ExpectedKeyword {
+        token_index: usize,
+        expected: Keyword,
+        actual: String,
+    },
+    ExpectedIdent {
+        token_index: usize,
+        actual: String,
+    },
+    ExpectedConst {
+        token_index: usize,
+        actual: String,
+    },
+    ExpectedSymbol {
+        token_index: usize,
+        expected: Symbol,
+        actual: String,
+    },
+    UnexpectedEofKeyword {
+        expected: Keyword,
+    },
+    UnexpectedEofSymbol {
+        expected: Symbol,
+    },
+}
+impl ParseError {
+    pub fn index(&self, data: &str) -> usize {
+        use ParseError::*;
+
+        match self {
+            ExpectedKeyword { token_index, .. } => *token_index,
+            ExpectedIdent { token_index, .. } => *token_index,
+            ExpectedConst { token_index, .. } => *token_index,
+            ExpectedSymbol { token_index, .. } => *token_index,
+            UnexpectedEofSymbol { .. } => data.len() - 1,
+            UnexpectedEofKeyword { .. } => data.len() - 1,
+        }
+    }
+}
 impl std::fmt::Display for ParseError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "TODO")
+        match self {
+            ParseError::ExpectedKeyword {
+                token_index: index,
+                expected,
+                actual,
+            } => write!(
+                f,
+                "expected keyword \"{expected}\" at index {index}, got {actual}",
+            ),
+            ParseError::ExpectedIdent {
+                token_index: index,
+                actual,
+            } => {
+                write!(f, "expected identifier at index {index}, got {actual}",)
+            }
+            ParseError::ExpectedConst {
+                token_index: index,
+                actual,
+            } => {
+                write!(f, "expected constant at index {index}, got {actual}",)
+            }
+            ParseError::ExpectedSymbol {
+                token_index: index,
+                expected,
+                actual,
+            } => write!(
+                f,
+                "expected symbol `{expected}` at index {index}, got {actual}",
+            ),
+            ParseError::UnexpectedEofKeyword { expected } => {
+                write!(f, "expected keyword \"{expected}\", reached end of file",)
+            }
+            ParseError::UnexpectedEofSymbol { expected } => {
+                write!(f, "expected symbol `{expected}`, reached end of file",)
+            }
+        }
     }
 }
 impl std::error::Error for ParseError {}
@@ -50,9 +124,17 @@ fn parse_function<'a>(
     index: &mut usize,
 ) -> Result<Function<'a>, ParseError> {
     expect_keyword(tokens, index, Keyword::Int)?;
-    let ident = match get_next(tokens, index).kind {
-        TokenKind::Identifier(name) => name,
-        _ => return Err(ParseError),
+    let ident = match get_next(tokens, index) {
+        Token {
+            kind: TokenKind::Identifier(name),
+            ..
+        } => name,
+        token => {
+            return Err(ParseError::ExpectedIdent {
+                token_index: token.index(),
+                actual: format!("{token:?}"),
+            });
+        }
     };
     expect_symbol(tokens, index, Symbol::OpenParenthesis)?;
     expect_keyword(tokens, index, Keyword::Void)?;
@@ -86,9 +168,15 @@ fn parse_expression<'a>(
     tokens: &'a [Token<'a>],
     index: &mut usize,
 ) -> Result<Expression<'a>, ParseError> {
-    match get_next(tokens, index).kind {
-        TokenKind::Constant(s) => Ok(Expression::Constant(s)),
-        _ => Err(ParseError),
+    match get_next(tokens, index) {
+        Token {
+            kind: TokenKind::Constant(s),
+            ..
+        } => Ok(Expression::Constant(s)),
+        token => Err(ParseError::ExpectedConst {
+            token_index: token.index(),
+            actual: format!("{token:?}"),
+        }),
     }
 }
 
@@ -115,7 +203,12 @@ fn expect_keyword<'a>(
             get_next(tokens, index);
             Ok(())
         }
-        _ => Err(ParseError),
+        Some(token) => Err(ParseError::ExpectedKeyword {
+            token_index: token.index(),
+            expected: keyword,
+            actual: format!("{token:?}"),
+        }),
+        None => Err(ParseError::UnexpectedEofKeyword { expected: keyword }),
     }
 }
 
@@ -132,7 +225,12 @@ fn expect_symbol<'a>(
             get_next(tokens, index);
             Ok(())
         }
-        _ => Err(ParseError),
+        Some(token) => Err(ParseError::ExpectedSymbol {
+            token_index: token.index(),
+            expected: symbol,
+            actual: format!("{token:?}"),
+        }),
+        None => Err(ParseError::UnexpectedEofSymbol { expected: symbol }),
     }
 }
 

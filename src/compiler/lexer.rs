@@ -24,6 +24,14 @@ pub enum LexingError {
     /// Sequence doesn't match a valid [`Token`]
     NoValidToken { index: usize },
 }
+impl LexingError {
+    pub fn index(&self) -> usize {
+        use LexingError::*;
+        match self {
+            NoValidToken { index } => *index,
+        }
+    }
+}
 impl std::fmt::Display for LexingError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {

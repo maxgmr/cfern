@@ -148,6 +148,12 @@ impl From<Symbol> for char {
         s.chars().nth(0).unwrap()
     }
 }
+impl std::fmt::Display for Symbol {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let s: &'static str = self.into();
+        write!(f, "{s}")
+    }
+}
 
 /// A C keyword.
 #[derive(Copy, Clone, Debug, PartialEq, Eq, EnumIter, IntoStaticStr)]
@@ -197,6 +203,12 @@ impl<'a> TryFrom<&'a str> for Keyword {
             }
         }
         Err(KeywordFromStrError(value))
+    }
+}
+impl Display for Keyword {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let s: &'static str = self.into();
+        write!(f, "{s}")
     }
 }
 
