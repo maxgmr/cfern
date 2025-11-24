@@ -3,7 +3,14 @@ use crate::compiler::token::{Keyword, Symbol, Token, TokenKind};
 /// Converts an array of [`Token`]s into an abstract syntax tree in the form of a [`Program`].
 pub fn parse<'a>(tokens: &'a [Token]) -> Result<Program<'a>, ParseError> {
     let mut index = 0;
-    parse_program(tokens, &mut index)
+    let result = parse_program(tokens, &mut index);
+    if index < tokens.len() {
+        let extra_token = get_next(tokens, &mut index);
+        return Err(ParseError::UnexpectedToken {
+            token_index: extra_token.index(),
+        });
+    }
+    result
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -53,6 +60,9 @@ pub enum ParseError {
     UnexpectedEofSymbol {
         expected: Symbol,
     },
+    UnexpectedToken {
+        token_index: usize,
+    },
 }
 impl ParseError {
     pub fn index(&self, data: &str) -> usize {
@@ -65,6 +75,7 @@ impl ParseError {
             ExpectedSymbol { token_index, .. } => *token_index,
             UnexpectedEofSymbol { .. } => data.len() - 1,
             UnexpectedEofKeyword { .. } => data.len() - 1,
+            UnexpectedToken { token_index } => *token_index,
         }
     }
 }
@@ -77,19 +88,19 @@ impl std::fmt::Display for ParseError {
                 actual,
             } => write!(
                 f,
-                "expected keyword \"{expected}\" at index {index}, got {actual}",
+                "expected keyword \"{expected}\" at index {index}, got {actual}"
             ),
             ParseError::ExpectedIdent {
                 token_index: index,
                 actual,
             } => {
-                write!(f, "expected identifier at index {index}, got {actual}",)
+                write!(f, "expected identifier at index {index}, got {actual}")
             }
             ParseError::ExpectedConst {
                 token_index: index,
                 actual,
             } => {
-                write!(f, "expected constant at index {index}, got {actual}",)
+                write!(f, "expected constant at index {index}, got {actual}")
             }
             ParseError::ExpectedSymbol {
                 token_index: index,
@@ -100,10 +111,13 @@ impl std::fmt::Display for ParseError {
                 "expected symbol `{expected}` at index {index}, got {actual}",
             ),
             ParseError::UnexpectedEofKeyword { expected } => {
-                write!(f, "expected keyword \"{expected}\", reached end of file",)
+                write!(f, "expected keyword \"{expected}\", reached end of file")
             }
             ParseError::UnexpectedEofSymbol { expected } => {
-                write!(f, "expected symbol `{expected}`, reached end of file",)
+                write!(f, "expected symbol `{expected}`, reached end of file")
+            }
+            ParseError::UnexpectedToken { token_index } => {
+                write!(f, "unexpected token at index {token_index}")
             }
         }
     }
