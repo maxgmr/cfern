@@ -3,14 +3,14 @@ use crate::compiler::token::{Keyword, Symbol, Token, TokenKind};
 /// Converts an array of [`Token`]s into an abstract syntax tree in the form of a [`Program`].
 pub fn parse<'a>(tokens: &'a [Token]) -> Result<Program<'a>, ParseError> {
     let mut index = 0;
-    let result = parse_program(tokens, &mut index);
+    let result = parse_program(tokens, &mut index)?;
     if index < tokens.len() {
         let extra_token = get_next(tokens, &mut index);
         return Err(ParseError::UnexpectedToken {
             token_index: extra_token.index(),
         });
     }
-    result
+    Ok(result)
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
