@@ -34,7 +34,7 @@ pub enum Expression<'a> {
     Constant(&'a str),
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ParseError {
     ExpectedKeyword {
         token_index: usize,
