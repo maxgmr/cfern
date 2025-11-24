@@ -96,6 +96,18 @@ impl<'a> Token<'a> {
     pub fn is_empty(&self) -> bool {
         self.len == 0
     }
+
+    /// Convert to a [`String`] useful for error reporting.
+    pub fn to_debug_string(&self) -> String {
+        use TokenKind::*;
+
+        match self.kind {
+            Keyword(kw) => format!("keyword \"{}\" at index {}", kw, self.index),
+            Identifier(i) => format!("identifier \"{}\" at index {}", i, self.index),
+            Constant(c) => format!("constant `{}` at index {}", c, self.index),
+            Symbol(s) => format!("symbol `{}` at index {}", s, self.index),
+        }
+    }
 }
 
 /// A particular kind of C code token.

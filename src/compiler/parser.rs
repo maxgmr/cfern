@@ -146,7 +146,7 @@ fn parse_function<'a>(
         token => {
             return Err(ParseError::ExpectedIdent {
                 token_index: token.index(),
-                actual: format!("{token:?}"),
+                actual: token.to_debug_string(),
             });
         }
     };
@@ -189,7 +189,7 @@ fn parse_expression<'a>(
         } => Ok(Expression::Constant(s)),
         token => Err(ParseError::ExpectedConst {
             token_index: token.index(),
-            actual: format!("{token:?}"),
+            actual: token.to_debug_string(),
         }),
     }
 }
@@ -220,7 +220,7 @@ fn expect_keyword<'a>(
         Some(token) => Err(ParseError::ExpectedKeyword {
             token_index: token.index(),
             expected: keyword,
-            actual: format!("{token:?}"),
+            actual: token.to_debug_string(),
         }),
         None => Err(ParseError::UnexpectedEofKeyword { expected: keyword }),
     }
@@ -242,7 +242,7 @@ fn expect_symbol<'a>(
         Some(token) => Err(ParseError::ExpectedSymbol {
             token_index: token.index(),
             expected: symbol,
-            actual: format!("{token:?}"),
+            actual: token.to_debug_string(),
         }),
         None => Err(ParseError::UnexpectedEofSymbol { expected: symbol }),
     }
