@@ -13,27 +13,32 @@ pub fn parse<'a>(tokens: &'a [Token]) -> Result<Program<'a>, ParseError> {
     Ok(result)
 }
 
+/// The root node of a C abstract syntax tree. Represents a C program.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Program<'a> {
     pub function: Function<'a>,
 }
 
+/// Represents a function within a C abstract syntax tree.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Function<'a> {
     pub name: &'a str,
     pub body: Statement<'a>,
 }
 
+/// Represents a statement within a C abstract syntax tree.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Statement<'a> {
     Return(Expression<'a>),
 }
 
+/// Represents an expression within a C abstract syntax tree.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Expression<'a> {
     Constant(&'a str),
 }
 
+/// An error which can occur whilst parsing a list of C [`Token`]s.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ParseError {
     ExpectedKeyword {
@@ -65,6 +70,7 @@ pub enum ParseError {
     },
 }
 impl ParseError {
+    /// Gets the starting index (within the C source file) in which this error occurred.
     pub fn index(&self, data: &str) -> usize {
         use ParseError::*;
 
