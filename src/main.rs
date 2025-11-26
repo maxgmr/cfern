@@ -50,7 +50,6 @@ fn main() -> color_eyre::Result<()> {
         Ok(ast) => ast,
         Err(parse_error) => return Err(CodeError::report_parse_error(&input_file, &parse_error)),
     };
-    println!("{ast:#?}");
     // Return early if parse-only option enabled
     if cli.parse {
         return Ok(());
