@@ -55,7 +55,7 @@ fn main() -> color_eyre::Result<()> {
         return Ok(());
     }
 
-    let asm = compiler::generate_asm(&ast)?;
+    let asm = compiler::generate_asm(&input_file, &ast)?;
     // Return early if codegen-only option enabled
     if cli.codegen {
         return Ok(());
