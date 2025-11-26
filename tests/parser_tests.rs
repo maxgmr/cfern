@@ -1,6 +1,6 @@
 use cfern::compiler::{
     lex, parse,
-    parser::{Expression, Function, ParseError, Program, Statement},
+    parser::{CProgram, Expression, Function, ParseError, Statement},
     token::Symbol,
 };
 
@@ -14,7 +14,7 @@ fn return_2() {
     let tokens = lex(&data).unwrap();
     assert_eq!(
         parse(&tokens).unwrap(),
-        Program {
+        CProgram {
             function: Function {
                 name: "main",
                 body: Statement::Return(Expression::Constant("2"))

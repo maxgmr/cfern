@@ -1,16 +1,13 @@
-use crate::compiler::parser;
+use crate::compiler::parser::CProgram;
 
-/// Generates an assembly abstract syntax tree from a C [`parser::Program`] abstract syntax tree.
-pub fn generate_asm<'a>(
-    data: &'a str,
-    ast: &parser::Program<'_>,
-) -> color_eyre::Result<Program<'a>> {
+/// Generates an assembly abstract syntax tree from a [`CProgram`] abstract syntax tree.
+pub fn generate_asm<'a>(data: &'a str, ast: &CProgram<'_>) -> color_eyre::Result<AsmProgram<'a>> {
     todo!()
 }
 
 /// The root node of an ASM abstract syntax tree. Represents an ASM program.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Program<'a> {
+pub struct AsmProgram<'a> {
     pub function: Function<'a>,
 }
 
@@ -43,3 +40,7 @@ pub enum Operand {
 pub enum Register {
     Eax,
 }
+
+/// An error which can occur whilst parsing a [`CProgram`].
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum AsmGenerationError {}

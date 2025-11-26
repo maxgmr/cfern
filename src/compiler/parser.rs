@@ -1,7 +1,7 @@
 use crate::compiler::token::{Keyword, Symbol, Token, TokenKind};
 
-/// Converts an array of [`Token`]s into an abstract syntax tree in the form of a [`Program`].
-pub fn parse<'a>(tokens: &'a [Token]) -> Result<Program<'a>, ParseError> {
+/// Converts an array of [`Token`]s into an abstract syntax tree in the form of a [`CProgram`].
+pub fn parse<'a>(tokens: &'a [Token]) -> Result<CProgram<'a>, ParseError> {
     let mut index = 0;
     let result = parse_program(tokens, &mut index)?;
     if index < tokens.len() {
@@ -15,7 +15,7 @@ pub fn parse<'a>(tokens: &'a [Token]) -> Result<Program<'a>, ParseError> {
 
 /// The root node of a C abstract syntax tree. Represents a C program.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Program<'a> {
+pub struct CProgram<'a> {
     pub function: Function<'a>,
 }
 
@@ -133,8 +133,8 @@ impl std::error::Error for ParseError {}
 fn parse_program<'a>(
     tokens: &'a [Token<'a>],
     index: &mut usize,
-) -> Result<Program<'a>, ParseError> {
-    Ok(Program {
+) -> Result<CProgram<'a>, ParseError> {
+    Ok(CProgram {
         function: parse_function(tokens, index)?,
     })
 }
@@ -272,7 +272,7 @@ mod tests {
             Token::new(TokenKind::Symbol(Symbol::Semicolon), 142),
             Token::new(TokenKind::Symbol(Symbol::CloseBrace), 172),
         ];
-        let expected = Program {
+        let expected = CProgram {
             function: Function {
                 name: "main",
                 body: Statement::Return(Expression::Constant("2")),
