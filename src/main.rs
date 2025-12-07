@@ -61,7 +61,7 @@ fn main() -> color_eyre::Result<()> {
         return Ok(());
     }
 
-    let assembly_file = compiler::emit_code(&asm)?;
+    let assembly_file = compiler::emit_code(&cli.input_file, &asm)?;
     // Return early if assembly-only option enabled
     if cli.assembly {
         return Ok(());
