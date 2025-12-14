@@ -96,4 +96,32 @@ mod tests {
         let tokens = lex(data).unwrap();
         assert_eq!(tokens, expected);
     }
+
+    #[test]
+    fn lex_with_comments() {
+        let data = "// Comment\nint main(void) { /* block */ return 2; }";
+        let expected = [
+            Token::new(TokenKind::Keyword(Keyword::Int), 11),
+            Token::new(TokenKind::Identifier("main"), 15),
+            Token::new(TokenKind::Symbol(Symbol::OpenParenthesis), 19),
+            Token::new(TokenKind::Keyword(Keyword::Void), 20),
+            Token::new(TokenKind::Symbol(Symbol::CloseParenthesis), 24),
+            Token::new(TokenKind::Symbol(Symbol::OpenBrace), 26),
+            Token::new(TokenKind::Keyword(Keyword::Return), 40),
+            Token::new(TokenKind::Constant("2"), 47),
+            Token::new(TokenKind::Symbol(Symbol::Semicolon), 48),
+            Token::new(TokenKind::Symbol(Symbol::CloseBrace), 50),
+        ];
+        let tokens = lex(data).unwrap();
+        assert_eq!(tokens, expected);
+    }
+
+    #[test]
+    fn lex_bad_token() {
+        let data = "int @ main";
+        let result = lex(data);
+
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err().index(), 4);
+    }
 }
