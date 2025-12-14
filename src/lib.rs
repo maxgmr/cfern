@@ -12,7 +12,7 @@
 
 pub mod assemble_and_link;
 pub mod compiler;
-mod lexer;
+pub mod lexer;
 pub mod parse_cli;
 pub mod preprocess;
 pub mod token;
