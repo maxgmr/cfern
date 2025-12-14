@@ -34,7 +34,7 @@ fn return_2_repeated_keyword() {
         parse(&tokens).unwrap_err(),
         ParseError::ExpectedIdent {
             token_index: 4,
-            actual: "keyword \"int\" at index 4".to_string()
+            actual: "keyword 'int' at byte 4".to_string()
         }
     );
 }
@@ -70,7 +70,7 @@ fn return_2_missing_semicolon() {
         ParseError::ExpectedSymbol {
             token_index: 30,
             expected: Symbol::Semicolon,
-            actual: "symbol `}` at index 30".to_string(),
+            actual: "symbol '}' at byte 30".to_string(),
         }
     );
 }

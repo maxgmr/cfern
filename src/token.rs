@@ -1,71 +1,47 @@
 //! Tokens of C code.
 
-use std::fmt::Display;
+use std::ops::Range;
 
 use strum::{EnumIter, IntoEnumIterator, IntoStaticStr};
 
 /// A token of C code.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Token<'a> {
+    /// The semantic content of this token
     pub(crate) kind: TokenKind<'a>,
-    len: usize,
-    index: usize,
+    /// The location of this token in the source
+    pub(crate) span: Span,
 }
 impl<'a> Token<'a> {
     /// Create a new token.
     #[must_use]
-    pub fn new(kind: TokenKind<'a>, index: usize) -> Self {
-        let len = match kind {
-            TokenKind::Keyword(keyword) => {
-                let kw_s: &'a str = keyword.into();
-                kw_s.len()
-            }
-            TokenKind::Identifier(ident) => ident.len(),
-            TokenKind::Constant(constant) => constant.len(),
-            TokenKind::Symbol(_) => 1,
-        };
-        Self { kind, len, index }
+    pub fn new(kind: TokenKind<'a>, start: usize) -> Self {
+        let len = kind.len();
+        Self {
+            kind,
+            span: Span { start, len },
+        }
     }
 
-    /// Get the [`TokenKind`] of this token.
-    #[must_use]
-    pub fn kind(&self) -> &TokenKind<'_> {
-        &self.kind
-    }
-
-    /// Get the index of this token.
-    #[must_use]
-    pub fn index(&self) -> usize {
-        self.index
-    }
-
-    /// Get the length of this token.
+    /// Get the length of this token in bytes.
     #[must_use]
     pub fn len(&self) -> usize {
-        self.len
+        self.span.len
     }
 
-    /// Check whether or not this token is empty.
+    /// Check whether or not this token is empty. This should never happen in practice.
     #[must_use]
     pub fn is_empty(&self) -> bool {
-        self.len == 0
+        self.span.len == 0
     }
-
-    /// Convert to a [`String`] useful for error reporting.
-    #[must_use]
-    pub fn to_debug_string(&self) -> String {
-        use TokenKind::{Constant, Identifier, Keyword, Symbol};
-
-        match self.kind {
-            Keyword(kw) => format!("keyword \"{}\" at index {}", kw, self.index),
-            Identifier(i) => format!("identifier \"{}\" at index {}", i, self.index),
-            Constant(c) => format!("constant `{}` at index {}", c, self.index),
-            Symbol(s) => format!("symbol `{}` at index {}", s, self.index),
-        }
+}
+impl std::fmt::Display for Token<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{} at byte {}", self.kind, self.span.start)
     }
 }
 
-/// A particular kind of C code token.
+/// The semantic content of a [`Token`].
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum TokenKind<'a> {
     /// A C keyword (`int`, `void`, `return`, etc.).
@@ -77,6 +53,50 @@ pub enum TokenKind<'a> {
     /// A single-character symbol (parenthesis, brace, semicolon, etc.).
     Symbol(Symbol),
 }
+impl<'a> TokenKind<'a> {
+    /// Calculate the length of this token kind in bytes.
+    #[must_use]
+    fn len(&self) -> usize {
+        match self {
+            TokenKind::Keyword(kw) => {
+                let s: &str = kw.into();
+                s.len()
+            }
+            TokenKind::Identifier(s) | TokenKind::Constant(s) => s.len(),
+            TokenKind::Symbol(_) => 1,
+        }
+    }
+
+    /// Check whether or not this token kind is empty.
+    #[must_use]
+    fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+
+    /// Check whether or not this token kind is a keyword.
+    #[must_use]
+    fn is_keyword(&self) -> bool {
+        matches!(self, TokenKind::Keyword(_))
+    }
+
+    /// Check whether or not this token kind is an identifier.
+    #[must_use]
+    fn is_identifier(&self) -> bool {
+        matches!(self, TokenKind::Identifier(_))
+    }
+
+    /// Check whether or not this token kind is a constant.
+    #[must_use]
+    fn is_constant(&self) -> bool {
+        matches!(self, TokenKind::Constant(_))
+    }
+
+    /// Check whether or not this token kind is a symbol.
+    #[must_use]
+    fn is_symbol(&self) -> bool {
+        matches!(self, TokenKind::Symbol(_))
+    }
+}
 impl<'a> From<TokenKind<'a>> for &'a str {
     fn from(value: TokenKind<'a>) -> Self {
         match value {
@@ -87,43 +107,75 @@ impl<'a> From<TokenKind<'a>> for &'a str {
         }
     }
 }
-
-/// An individual symbol with meaning in C.
-#[derive(Copy, Clone, Debug, PartialEq, Eq, EnumIter)]
-pub enum Symbol {
-    /// `(`
-    OpenParenthesis,
-    /// `)`
-    CloseParenthesis,
-    /// `{`
-    OpenBrace,
-    /// `}`
-    CloseBrace,
-    /// `;`
-    Semicolon,
-}
-impl From<Symbol> for &'static str {
-    fn from(value: Symbol) -> Self {
-        (&value).into()
-    }
-}
-impl From<&Symbol> for &'static str {
-    fn from(value: &Symbol) -> Self {
-        match value {
-            Symbol::OpenParenthesis => "(",
-            Symbol::CloseParenthesis => ")",
-            Symbol::OpenBrace => "{",
-            Symbol::CloseBrace => "}",
-            Symbol::Semicolon => ";",
+impl std::fmt::Display for TokenKind<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            TokenKind::Keyword(kw) => write!(f, "keyword '{kw}'"),
+            TokenKind::Identifier(id) => write!(f, "identifier '{id}'"),
+            TokenKind::Constant(c) => write!(f, "constant '{c}'"),
+            TokenKind::Symbol(s) => write!(f, "symbol '{s}'"),
         }
     }
+}
+
+/// The location information of a [`Token`] in the source.
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+pub struct Span {
+    /// Starting byte position in the source
+    pub(crate) start: usize,
+    /// Length in bytes
+    pub(crate) len: usize,
+}
+impl Span {
+    /// Create a new span.
+    #[must_use]
+    fn new(start: usize, len: usize) -> Self {
+        Self { start, len }
+    }
+
+    /// Get the end position (exclusive) of this span.
+    #[must_use]
+    fn end(&self) -> usize {
+        self.start + self.len
+    }
+
+    /// Get the [`Range`] of this span.
+    #[must_use]
+    fn range(&self) -> Range<usize> {
+        self.start..self.end()
+    }
+
+    /// Check whether or not this span contains a given position.
+    #[must_use]
+    fn contains(&self, position: usize) -> bool {
+        position >= self.start && position < self.end()
+    }
+
+    /// Extract the text for this span from the source.
+    #[must_use]
+    fn text<'a>(&self, source: &'a str) -> &'a str {
+        &source[self.range()]
+    }
+}
+
+/// An individual symbol with meaning in C.
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, EnumIter, IntoStaticStr)]
+pub enum Symbol {
+    #[strum(serialize = "(")]
+    OpenParenthesis,
+    #[strum(serialize = ")")]
+    CloseParenthesis,
+    #[strum(serialize = "{")]
+    OpenBrace,
+    #[strum(serialize = "}")]
+    CloseBrace,
+    #[strum(serialize = ";")]
+    Semicolon,
 }
 impl From<Symbol> for char {
     fn from(value: Symbol) -> Self {
         let s: &'static str = value.into();
-        // OK to unwrap here; we know that the value isn't empty.
-        #[allow(clippy::unwrap_used)]
-        s.chars().next().unwrap()
+        s.chars().next().expect("Symbol string should not be empty")
     }
 }
 impl std::fmt::Display for Symbol {
@@ -134,7 +186,7 @@ impl std::fmt::Display for Symbol {
 }
 
 /// A C keyword.
-#[derive(Copy, Clone, Debug, PartialEq, Eq, EnumIter, IntoStaticStr)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, EnumIter, IntoStaticStr)]
 #[strum(serialize_all = "lowercase")]
 #[allow(missing_docs)]
 pub enum Keyword {
@@ -184,7 +236,7 @@ impl<'a> TryFrom<&'a str> for Keyword {
         Err(KeywordFromStrError(value))
     }
 }
-impl Display for Keyword {
+impl std::fmt::Display for Keyword {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let s: &'static str = self.into();
         write!(f, "{s}")
@@ -194,7 +246,7 @@ impl Display for Keyword {
 /// This error is returned if the given string slice doesn't match a C keyword.
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct KeywordFromStrError<'a>(&'a str);
-impl Display for KeywordFromStrError<'_> {
+impl std::fmt::Display for KeywordFromStrError<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "str '{}' does not match any C keyword", self.0)
     }

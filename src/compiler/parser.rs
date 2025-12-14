@@ -7,7 +7,7 @@ pub fn parse<'a>(tokens: &'a [Token]) -> Result<CProgram<'a>, ParseError> {
     if index < tokens.len() {
         let extra_token = get_next(tokens, &mut index);
         return Err(ParseError::UnexpectedToken {
-            token_index: extra_token.index(),
+            token_index: extra_token.span.start,
         });
     }
     Ok(result)
@@ -151,8 +151,8 @@ fn parse_function<'a>(
         } => name,
         token => {
             return Err(ParseError::ExpectedIdent {
-                token_index: token.index(),
-                actual: token.to_debug_string(),
+                token_index: token.span.start,
+                actual: token.to_string(),
             });
         }
     };
@@ -194,8 +194,8 @@ fn parse_expression<'a>(
             ..
         } => Ok(Expression::Constant(s)),
         token => Err(ParseError::ExpectedConst {
-            token_index: token.index(),
-            actual: token.to_debug_string(),
+            token_index: token.span.start,
+            actual: token.to_string(),
         }),
     }
 }
@@ -224,9 +224,9 @@ fn expect_keyword<'a>(
             Ok(())
         }
         Some(token) => Err(ParseError::ExpectedKeyword {
-            token_index: token.index(),
+            token_index: token.span.start,
             expected: keyword,
-            actual: token.to_debug_string(),
+            actual: token.to_string(),
         }),
         None => Err(ParseError::UnexpectedEofKeyword { expected: keyword }),
     }
@@ -246,15 +246,16 @@ fn expect_symbol<'a>(
             Ok(())
         }
         Some(token) => Err(ParseError::ExpectedSymbol {
-            token_index: token.index(),
+            token_index: token.span.start,
             expected: symbol,
-            actual: token.to_debug_string(),
+            actual: token.to_string(),
         }),
         None => Err(ParseError::UnexpectedEofSymbol { expected: symbol }),
     }
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
 

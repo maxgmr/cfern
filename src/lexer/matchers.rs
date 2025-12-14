@@ -93,7 +93,7 @@ mod tests {
     fn keyword_matcher_int() {
         let matcher = KeywordMatcher;
         let token = matcher.try_match("int main", 0).unwrap();
-        assert_eq!(token.kind(), &TokenKind::Keyword(Keyword::Int));
+        assert_eq!(token.kind, TokenKind::Keyword(Keyword::Int));
         assert_eq!(token.len(), 3);
     }
 
@@ -107,7 +107,7 @@ mod tests {
     fn identifier_matcher_simple() {
         let matcher = IdentifierMatcher;
         let token = matcher.try_match("my_var = 5;", 0).unwrap();
-        assert_eq!(token.kind(), &TokenKind::Identifier("my_var"));
+        assert_eq!(token.kind, TokenKind::Identifier("my_var"));
         assert_eq!(token.len(), 6);
     }
 
@@ -127,7 +127,7 @@ mod tests {
     fn identifier_matcher_non_ascii_end() {
         let matcher = IdentifierMatcher;
         let token = matcher.try_match("test_1234五", 0).unwrap();
-        assert_eq!(token.kind(), &TokenKind::Identifier("test_1234"));
+        assert_eq!(token.kind, TokenKind::Identifier("test_1234"));
         assert_eq!(token.len(), 9);
     }
 
@@ -135,7 +135,7 @@ mod tests {
     fn constant_matcher_number() {
         let matcher = ConstantMatcher;
         let token = matcher.try_match("12345;", 0).unwrap();
-        assert_eq!(token.kind(), &TokenKind::Constant("12345"));
+        assert_eq!(token.kind, TokenKind::Constant("12345"));
         assert_eq!(token.len(), 5);
     }
 
@@ -149,8 +149,8 @@ mod tests {
     fn symbol_matcher_semicolon() {
         let matcher = SymbolMatcher;
         let token = matcher.try_match(";", 10).unwrap();
-        assert_eq!(token.kind(), &TokenKind::Symbol(Symbol::Semicolon));
-        assert_eq!(token.index(), 10);
+        assert_eq!(token.kind, TokenKind::Symbol(Symbol::Semicolon));
+        assert_eq!(token.span.start, 10);
     }
 
     #[test]
