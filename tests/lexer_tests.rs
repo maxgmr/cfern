@@ -1,7 +1,7 @@
 mod common;
 
 use cfern::{
-    compiler::{lex, lexer::LexingError},
+    lexer::lex,
     token::{Keyword, Symbol, Token, TokenKind},
 };
 use common::get_input_string;
@@ -27,8 +27,6 @@ fn return_2() {
 #[test]
 fn return_2_bad_token() {
     let data = get_input_string("test_inputs/return_2_bad_token.c").unwrap();
-    assert_eq!(
-        lex(&data).unwrap_err(),
-        LexingError::NoValidToken { index: 4 }
-    );
+    let err = lex(&data).unwrap_err();
+    assert_eq!(err.index(), 4);
 }
