@@ -1,8 +1,9 @@
 use cfern::{
     compiler::{
-        lex, parse,
+        parse,
         parser::{CProgram, Expression, Function, ParseError, Statement},
     },
+    lexer::lex,
     token::Symbol,
 };
 

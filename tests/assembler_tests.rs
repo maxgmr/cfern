@@ -2,7 +2,8 @@ use std::fs;
 
 use camino::Utf8PathBuf;
 use cfern::{
-    compiler::{emit_code, generate_asm, lex, parse},
+    compiler::{emit_code, generate_asm, parse},
+    lexer::lex,
     preprocess::preprocess,
 };
 
