@@ -1,49 +1,23 @@
-use std::{fmt::Display, sync::LazyLock};
+use std::fmt::Display;
 
-use regex::Regex;
 use strum::{EnumIter, IntoEnumIterator, IntoStaticStr};
-
-const KEYWORD_REGEX: &str = r"^([a-zA-Z]+)(?-u:\b)";
-const IDENTIFIER_REGEX: &str = r"^([a-zA-Z_][0-9A-Za-z_]*)(?-u:\b)";
-const CONSTANT_REGEX: &str = r"^([0-9]+)(?-u:\b)";
-
-/// Generates regex helper functions which statically create regexes for each [`Token`] variant.
-macro_rules! generate_token_regexes {
-    [
-        $($variant:ident => $regex:expr),* $(,)?
-    ] => {
-        $(
-            paste::paste! {
-                pub fn [<match_ $variant:lower>](haystack: &str) -> Option<&str> {
-                    static REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new($regex).unwrap());
-                    REGEX.captures(haystack)
-                        .and_then(|caps| caps.get(1))
-                        .map(|m| m.as_str())
-                }
-            }
-        )*
-    };
-}
-generate_token_regexes![
-    Keyword => KEYWORD_REGEX,
-    Identifier => IDENTIFIER_REGEX,
-    Constant => CONSTANT_REGEX,
-];
 
 /// A token of C code.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Token<'a> {
-    pub kind: TokenKind<'a>,
+    pub(crate) kind: TokenKind<'a>,
     len: usize,
     index: usize,
 }
 impl<'a> Token<'a> {
     /// Create an empty placeholder token.
+    #[must_use]
     pub fn create_placeholder() -> Self {
         Self::new(TokenKind::Identifier(""), 0)
     }
 
     /// Create a new token.
+    #[must_use]
     pub fn new(kind: TokenKind<'a>, index: usize) -> Self {
         let len = match kind {
             TokenKind::Keyword(keyword) => {
@@ -63,7 +37,7 @@ impl<'a> Token<'a> {
     pub fn try_update<S, T>(&mut self, data: &'a str, index: usize, match_fn: S, token_fn: T)
     where
         S: Fn(&'a str) -> Option<&'a str>,
-        T: Fn(&'a str) -> Option<TokenKind>,
+        T: Fn(&'a str) -> Option<TokenKind<'_>>,
     {
         if let Some(new_str) = match_fn(data)
             && new_str.len() > self.len
@@ -78,28 +52,33 @@ impl<'a> Token<'a> {
     }
 
     /// Get the [`TokenKind`] of this token.
+    #[must_use]
     pub fn kind(&self) -> &TokenKind<'_> {
         &self.kind
     }
 
     /// Get the index of this token.
+    #[must_use]
     pub fn index(&self) -> usize {
         self.index
     }
 
     /// Get the length of this token.
+    #[must_use]
     pub fn len(&self) -> usize {
         self.len
     }
 
     /// Check whether or not this token is empty.
+    #[must_use]
     pub fn is_empty(&self) -> bool {
         self.len == 0
     }
 
     /// Convert to a [`String`] useful for error reporting.
+    #[must_use]
     pub fn to_debug_string(&self) -> String {
-        use TokenKind::*;
+        use TokenKind::{Constant, Identifier, Keyword, Symbol};
 
         match self.kind {
             Keyword(kw) => format!("keyword \"{}\" at index {}", kw, self.index),
@@ -113,9 +92,13 @@ impl<'a> Token<'a> {
 /// A particular kind of C code token.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum TokenKind<'a> {
+    /// A C keyword (`int`, `void`, `return`, etc.).
     Keyword(Keyword),
+    /// A C identifier (variable name, function name, etc.).
     Identifier(&'a str),
+    /// A C integer constant.
     Constant(&'a str),
+    /// A single-character symbol (parenthesis, brace, semicolon, etc.).
     Symbol(Symbol),
 }
 impl<'a> From<TokenKind<'a>> for &'a str {
@@ -132,10 +115,15 @@ impl<'a> From<TokenKind<'a>> for &'a str {
 /// An individual symbol with meaning in C.
 #[derive(Copy, Clone, Debug, PartialEq, Eq, EnumIter)]
 pub enum Symbol {
+    /// `(`
     OpenParenthesis,
+    /// `)`
     CloseParenthesis,
+    /// `{`
     OpenBrace,
+    /// `}`
     CloseBrace,
+    /// `;`
     Semicolon,
 }
 impl From<Symbol> for &'static str {
@@ -157,7 +145,9 @@ impl From<&Symbol> for &'static str {
 impl From<Symbol> for char {
     fn from(value: Symbol) -> Self {
         let s: &'static str = value.into();
-        s.chars().nth(0).unwrap()
+        // OK to unwrap here; we know that the value isn't empty.
+        #[allow(clippy::unwrap_used)]
+        s.chars().next().unwrap()
     }
 }
 impl std::fmt::Display for Symbol {
@@ -170,6 +160,7 @@ impl std::fmt::Display for Symbol {
 /// A C keyword.
 #[derive(Copy, Clone, Debug, PartialEq, Eq, EnumIter, IntoStaticStr)]
 #[strum(serialize_all = "lowercase")]
+#[allow(missing_docs)]
 pub enum Keyword {
     Auto,
     Break,
@@ -224,6 +215,7 @@ impl Display for Keyword {
     }
 }
 
+/// This error is returned if the given string slice doesn't match a C keyword.
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct KeywordFromStrError<'a>(&'a str);
 impl Display for KeywordFromStrError<'_> {
@@ -231,44 +223,12 @@ impl Display for KeywordFromStrError<'_> {
         write!(f, "str '{}' does not match any C keyword", self.0)
     }
 }
+impl std::error::Error for KeywordFromStrError<'_> {}
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn keyword_regex() {
-        assert_eq!(
-            match_keyword("static int my_fn() { return 0; }"),
-            Some("static")
-        );
-    }
-
-    #[test]
-    fn identifier_regex() {
-        assert_eq!(match_identifier("my_var_123 = 6;"), Some("my_var_123"));
-    }
-
-    #[test]
-    fn constant_regex() {
-        assert_eq!(match_constant("24637;"), Some("24637"));
-    }
-
-    #[test]
-    fn non_ascii_ident_regex() {
-        assert_eq!(match_identifier("你好马 = \"good\";"), None);
-    }
-
-    #[test]
-    fn non_ascii_end_ident_regex() {
-        assert_eq!(match_identifier("test_1234五"), Some("test_1234"));
-    }
-
-    #[test]
-    fn ident_regex_no_match() {
-        assert_eq!(match_identifier("不好; int test = 0;"), None);
-    }
-
     #[test]
     fn try_keyword_from_str() {
         assert_eq!(
@@ -288,15 +248,15 @@ mod tests {
     #[test]
     fn try_keyword_from_str_no_match() {
         let s = String::from("hello");
-        let result: Result<Keyword, KeywordFromStrError> = s.as_str().try_into();
+        let result: Result<Keyword, KeywordFromStrError<'_>> = s.as_str().try_into();
         assert_eq!(KeywordFromStrError("hello"), result.unwrap_err());
 
         let s = String::from("Signed");
-        let result: Result<Keyword, KeywordFromStrError> = s.as_str().try_into();
+        let result: Result<Keyword, KeywordFromStrError<'_>> = s.as_str().try_into();
         assert_eq!(KeywordFromStrError("Signed"), result.unwrap_err());
 
         let s = String::from(" int");
-        let result: Result<Keyword, KeywordFromStrError> = s.as_str().try_into();
+        let result: Result<Keyword, KeywordFromStrError<'_>> = s.as_str().try_into();
         assert_eq!(KeywordFromStrError(" int"), result.unwrap_err());
     }
 
