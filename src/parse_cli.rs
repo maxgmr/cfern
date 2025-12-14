@@ -1,6 +1,9 @@
+//! Responsible for managing the command-line interface of `cfern`.
+
 use camino::Utf8PathBuf;
 use clap::{ArgGroup, Parser};
 
+/// All available `cfern` arguments and flags.
 #[derive(Clone, Debug, Parser)]
 #[clap(
     author = "Max Gilmour", 

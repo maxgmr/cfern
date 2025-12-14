@@ -1,3 +1,5 @@
+//! Responsible for assembling and linking the generated assembly code.
+
 use std::{
     fs,
     io::{self, Write},
@@ -8,6 +10,10 @@ use camino::Utf8Path;
 use color_eyre::eyre::eyre;
 
 /// Currently just a wrapper around `gcc ASSEMBLY_FILE -o OUTPUT_FILE`.
+///
+/// # Errors
+///
+/// This function returns an error if the call to the GCC assembler and linker fails.
 pub fn assemble_and_link(path: &Utf8Path) -> color_eyre::Result<()> {
     let Some(stem) = path.file_stem() else {
         return Err(eyre!("no input file name given"));

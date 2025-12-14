@@ -1,3 +1,5 @@
+//! Tokens of C code.
+
 use std::fmt::Display;
 
 use strum::{EnumIter, IntoEnumIterator, IntoStaticStr};
