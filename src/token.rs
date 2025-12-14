@@ -12,12 +12,6 @@ pub struct Token<'a> {
     index: usize,
 }
 impl<'a> Token<'a> {
-    /// Create an empty placeholder token.
-    #[must_use]
-    pub fn create_placeholder() -> Self {
-        Self::new(TokenKind::Identifier(""), 0)
-    }
-
     /// Create a new token.
     #[must_use]
     pub fn new(kind: TokenKind<'a>, index: usize) -> Self {
@@ -31,26 +25,6 @@ impl<'a> Token<'a> {
             TokenKind::Symbol(_) => 1,
         };
         Self { kind, len, index }
-    }
-
-    /// If the start of the provided data satisfies the `match_fn`, that matched substring
-    /// satisfies the `token_fn`, and the length of the matched string is longer than the current
-    /// token length, then update this token.
-    pub fn try_update<S, T>(&mut self, data: &'a str, index: usize, match_fn: S, token_fn: T)
-    where
-        S: Fn(&'a str) -> Option<&'a str>,
-        T: Fn(&'a str) -> Option<TokenKind<'_>>,
-    {
-        if let Some(new_str) = match_fn(data)
-            && new_str.len() > self.len
-            && let Some(token_kind) = token_fn(new_str)
-        {
-            *self = Self {
-                kind: token_kind,
-                len: new_str.len(),
-                index,
-            };
-        }
     }
 
     /// Get the [`TokenKind`] of this token.
