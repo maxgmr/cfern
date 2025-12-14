@@ -1,4 +1,4 @@
-use crate::compiler::token::{
+use crate::token::{
     Keyword, Symbol, Token, TokenKind, match_constant, match_identifier, match_keyword,
 };
 

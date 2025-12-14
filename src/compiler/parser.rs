@@ -1,4 +1,4 @@
-use crate::compiler::token::{Keyword, Symbol, Token, TokenKind};
+use crate::token::{Keyword, Symbol, Token, TokenKind};
 
 /// Converts an array of [`Token`]s into an abstract syntax tree in the form of a [`CProgram`].
 pub fn parse<'a>(tokens: &'a [Token]) -> Result<CProgram<'a>, ParseError> {

@@ -1,6 +1,8 @@
-use cfern::compiler::{
-    lex, parse,
-    parser::{CProgram, Expression, Function, ParseError, Statement},
+use cfern::{
+    compiler::{
+        lex, parse,
+        parser::{CProgram, Expression, Function, ParseError, Statement},
+    },
     token::Symbol,
 };
 

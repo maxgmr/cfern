@@ -1,8 +1,7 @@
 mod common;
 
-use cfern::compiler::{
-    lex,
-    lexer::LexingError,
+use cfern::{
+    compiler::{lex, lexer::LexingError},
     token::{Keyword, Symbol, Token, TokenKind},
 };
 use common::get_input_string;
