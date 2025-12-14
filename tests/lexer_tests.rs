@@ -1,14 +1,15 @@
+use std::fs;
+
 mod common;
 
 use cfern::{
     lexer::lex,
     token::{Keyword, Symbol, Token, TokenKind},
 };
-use common::get_input_string;
 
 #[test]
 fn return_2() {
-    let data = get_input_string("test_inputs/return_2.c").unwrap();
+    let data = fs::read_to_string("test_inputs/return_2.c").unwrap();
     let expected = [
         Token::new(TokenKind::Keyword(Keyword::Int), 0),
         Token::new(TokenKind::Identifier("main"), 4),
@@ -26,7 +27,7 @@ fn return_2() {
 
 #[test]
 fn return_2_bad_token() {
-    let data = get_input_string("test_inputs/return_2_bad_token.c").unwrap();
+    let data = fs::read_to_string("test_inputs/return_2_bad_token.c").unwrap();
     let err = lex(&data).unwrap_err();
     assert_eq!(err.index(), 4);
 }

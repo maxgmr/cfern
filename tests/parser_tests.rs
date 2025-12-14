@@ -1,3 +1,5 @@
+use std::fs;
+
 use cfern::{
     compiler::{
         parse,
@@ -9,11 +11,9 @@ use cfern::{
 
 mod common;
 
-use common::get_input_string;
-
 #[test]
 fn return_2() {
-    let data = get_input_string("test_inputs/return_2.c").unwrap();
+    let data = fs::read_to_string("test_inputs/return_2.c").unwrap();
     let tokens = lex(&data).unwrap();
     assert_eq!(
         parse(&tokens).unwrap(),
@@ -28,7 +28,7 @@ fn return_2() {
 
 #[test]
 fn return_2_repeated_keyword() {
-    let data = get_input_string("test_inputs/return_2_repeated_keyword.c").unwrap();
+    let data = fs::read_to_string("test_inputs/return_2_repeated_keyword.c").unwrap();
     let tokens = lex(&data).unwrap();
     assert_eq!(
         parse(&tokens).unwrap_err(),
@@ -41,7 +41,7 @@ fn return_2_repeated_keyword() {
 
 #[test]
 fn return_2_extra_junk() {
-    let data = get_input_string("test_inputs/return_2_extra_junk.c").unwrap();
+    let data = fs::read_to_string("test_inputs/return_2_extra_junk.c").unwrap();
     let tokens = lex(&data).unwrap();
     assert_eq!(
         parse(&tokens).unwrap_err(),
@@ -51,7 +51,7 @@ fn return_2_extra_junk() {
 
 #[test]
 fn return_2_missing_close_brace() {
-    let data = get_input_string("test_inputs/return_2_missing_close_brace.c").unwrap();
+    let data = fs::read_to_string("test_inputs/return_2_missing_close_brace.c").unwrap();
     let tokens = lex(&data).unwrap();
     assert_eq!(
         parse(&tokens).unwrap_err(),
@@ -63,7 +63,7 @@ fn return_2_missing_close_brace() {
 
 #[test]
 fn return_2_missing_semicolon() {
-    let data = get_input_string("test_inputs/return_2_missing_semicolon.c").unwrap();
+    let data = fs::read_to_string("test_inputs/return_2_missing_semicolon.c").unwrap();
     let tokens = lex(&data).unwrap();
     assert_eq!(
         parse(&tokens).unwrap_err(),
