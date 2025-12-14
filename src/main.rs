@@ -14,15 +14,12 @@ use std::fs;
 
 use camino::Utf8PathBuf;
 use clap::Parser;
-use color_eyre::{
-    Section, SectionExt,
-    eyre::{OptionExt, eyre},
-    owo_colors::OwoColorize,
-};
+use color_eyre::{Section, SectionExt, eyre::eyre, owo_colors::OwoColorize};
 
 use cfern::{
     assemble_and_link::assemble_and_link,
-    compiler::{self, lexer::LexingError, parser::ParseError},
+    compiler::{self, parser::ParseError},
+    lexer::{LexingError, lex},
     parse_cli::Cli,
     preprocess::preprocess,
 };
@@ -33,12 +30,12 @@ fn main() -> color_eyre::Result<()> {
 
     let preprocessed_file = IntermediateFile(preprocess(&cli.input_file)?);
 
-    let input_file = fs::read_to_string(&preprocessed_file.0)?;
+    let input_str = fs::read_to_string(&preprocessed_file.0)?;
 
-    let tokens = match compiler::lex(&input_file) {
+    let tokens = match lex(&input_str) {
         Ok(tokens) => tokens,
         Err(lexing_error) => {
-            return Err(CodeError::report_lexing_error(&input_file, &lexing_error));
+            return Err(lexing_error.report(&input_str));
         }
     };
     // Return early if lex-only option enabled
@@ -48,7 +45,9 @@ fn main() -> color_eyre::Result<()> {
 
     let ast = match compiler::parse(&tokens) {
         Ok(ast) => ast,
-        Err(parse_error) => return Err(CodeError::report_parse_error(&input_file, &parse_error)),
+        Err(parse_error) => {
+            return Err(parse_error.report(&input_str));
+        }
     };
     // Return early if parse-only option enabled
     if cli.parse {
@@ -80,65 +79,48 @@ impl Drop for IntermediateFile {
     }
 }
 
-#[derive(Clone, Debug)]
-struct CodeError {
-    line_index: usize,
-    col_index: usize,
-    consumed_line: String,
-    remaining_line: String,
-    message: String,
-}
-impl CodeError {
-    fn report_parse_error(data: &str, error: &ParseError) -> color_eyre::Report {
-        Self::as_report(Self::convert(data, error.index(data), error.to_string()))
-    }
+trait CodeError {
+    fn report(&self, input_data: &str) -> color_eyre::Report;
 
-    fn report_lexing_error(data: &str, error: &LexingError) -> color_eyre::Report {
-        Self::as_report(Self::convert(data, error.index(), error.to_string()))
-    }
-
-    fn convert(data: &str, index: usize, message: String) -> Result<Self, color_eyre::Report> {
-        let consumed_lines: Vec<&str> = data[..index].split('\n').collect();
+    /// Take the input data, index, and message, then generate a `[color_eyre::Report]`.
+    fn data_to_report(input_data: &str, index: usize, message: String) -> color_eyre::Report {
+        let consumed_lines: Vec<&str> = input_data[..index].split('\n').collect();
         let line_index = consumed_lines.len().saturating_sub(1);
-        let consumed_line = consumed_lines.last().ok_or_eyre("no consumed lines")?;
+        let consumed_line = consumed_lines.last().expect("no consumed lines");
         let col_index = consumed_line.len();
-        let remaining_line: &str = data[index..]
+        let remaining_line: &str = input_data[index..]
             .split('\n')
             .next()
-            .ok_or_eyre("no remaining line")?;
-        Ok(Self {
-            line_index,
-            col_index,
-            consumed_line: (*consumed_line).to_string(),
-            remaining_line: remaining_line.to_string(),
-            message,
-        })
-    }
+            .expect("no remaining line");
 
-    fn as_report(result: Result<Self, color_eyre::Report>) -> color_eyre::Report {
-        result.map_or_else(|report| report, color_eyre::Report::from)
-    }
-}
-impl From<CodeError> for color_eyre::Report {
-    fn from(value: CodeError) -> Self {
-        eyre!("{}", value.message)
+        eyre!("{}", message)
             .with_section(|| {
                 format!(
                     "Line {}, column {}",
-                    (value.line_index + 1).blue(),
-                    (value.col_index + 1).blue()
+                    (line_index + 1).blue(),
+                    (col_index + 1).blue()
                 )
                 .header("Point in file:")
             })
             .with_section(|| {
                 format!(
                     "{}{}\n{}{}",
-                    value.consumed_line,
-                    value.remaining_line,
-                    (0..value.col_index).map(|_| " ").collect::<String>(),
+                    consumed_line,
+                    remaining_line,
+                    (0..col_index).map(|_| " ").collect::<String>(),
                     "^ here".bright_red().bold(),
                 )
                 .header("Line info:")
             })
+    }
+}
+impl CodeError for LexingError {
+    fn report(&self, input_data: &str) -> color_eyre::Report {
+        LexingError::data_to_report(input_data, self.index(), self.to_string())
+    }
+}
+impl CodeError for ParseError {
+    fn report(&self, input_data: &str) -> color_eyre::Report {
+        ParseError::data_to_report(input_data, self.index(input_data), self.to_string())
     }
 }
